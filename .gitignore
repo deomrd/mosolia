@@ -1,0 +1,8 @@
+# Secrets et donnees : jamais dans le depot
+config/base.php
+stockage/*
+!stockage/.htaccess
+*.sqlite
+*.log
+.DS_Store
+Thumbs.db

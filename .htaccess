@@ -1,0 +1,6 @@
+# Le site pointe sur ce dossier (cas de LWS : /htdocs/mosolia.boutixy.com) : tout est renvoye vers public/,
+# rien d'autre (code, configuration, base, journaux) n'est jamais servi.
+# Chemins absolus (/public/...) : les chemins relatifs se calculent mal chez certains hebergeurs.
+RewriteEngine On
+RewriteCond %{REQUEST_URI} !^/public/
+RewriteRule ^(.*)$ /public/$1 [L]

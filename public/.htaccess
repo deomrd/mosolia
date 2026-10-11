@@ -1,0 +1,9 @@
+# Les fichiers qui existent (css, js, images) sont servis tels quels, tout le reste va a l'application.
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+# arrive par le .htaccess du dossier parent (site pointe sur le dossier de l'application)
+RewriteCond %{REQUEST_URI} ^/public/
+RewriteRule ^ /public/index.php [L]
+# site pointe directement sur public/
+RewriteRule ^ /index.php [L]

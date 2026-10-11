@@ -1,0 +1,7 @@
+{
+  "name": "avecxy/avecxy",
+  "description": "AvecXY - gestion multi-organisation d'epargne et de credit",
+  "type": "project",
+  "require": { "php": ">=8.2", "ext-pdo": "*", "ext-mbstring": "*" },
+  "autoload": { "psr-4": { "AvecXY\\": "src/" }, "files": ["src/aides.php"] }
+}
