@@ -66,7 +66,8 @@ fun oublierSessionWeb() {
  * @param premiereAdresse chemin a ouvrir d'abord (un passage "/passage/..." ou une page)
  * @param pagesDeSortie chemins qui signifient « la session du site est finie » (page de connexion)
  * @param surSortie appele quand le site revient a sa page de connexion
- * @param barre contenu de la barre du haut (nom, bascule « Ma tournee »)
+ * @param barre contenu facultatif au-dessus du site
+ * @param surLienApplication liens /application/... du site (ex. /application/tournee) : actions de l'application
  */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
@@ -76,6 +77,7 @@ fun EcranWeb(
     pagesDeSortie: List<String>,
     surSortie: () -> Unit,
     barre: (@Composable () -> Unit)? = null,
+    surLienApplication: (String) -> Unit = {},
 ) {
     val contexte = LocalContext.current
     val base = depot.adresse.trimEnd('/')
@@ -101,7 +103,11 @@ fun EcranWeb(
     /** true = le lien ne s'ouvre pas dans l'application (telephone, WhatsApp, autre site...). */
     fun detourner(uri: Uri): Boolean {
         val schema = uri.scheme ?: return false
-        if ((schema == "https" || schema == "http") && uri.host == hote) return false
+        if ((schema == "https" || schema == "http") && uri.host == hote) {
+            val chemin = uri.path ?: ""
+            if (chemin.startsWith("/application/")) { surLienApplication(chemin); return true }
+            return false
+        }
         return ouvrirAilleurs(uri)
     }
 
@@ -109,7 +115,6 @@ fun EcranWeb(
 
     Column(Modifier.fillMaxSize().background(Fond)) {
         barre?.invoke()
-        if (chargement in 1..99) LinearProgressIndicator(progress = chargement / 100f, modifier = Modifier.fillMaxWidth().height(3.dp), color = Or, trackColor = Color.Transparent)
         Box(Modifier.fillMaxSize()) {
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
@@ -164,6 +169,8 @@ fun EcranWeb(
                     }
                 },
             )
+            // barre de chargement par-dessus la page (ne decale pas la mise en page du site)
+            if (chargement in 1..99) LinearProgressIndicator(progress = chargement / 100f, modifier = Modifier.fillMaxWidth().height(3.dp).align(Alignment.TopCenter), color = Or, trackColor = Color.Transparent)
             if (horsLigne) {
                 Column(
                     Modifier.fillMaxSize().background(Fond).padding(28.dp),
@@ -240,7 +247,11 @@ fun EcranGestion(depot: Depot, lancer: (suspend () -> Unit) -> Unit) {
                 }
             }
         }
-        chemin != null -> EcranWeb(depot, chemin!!, listOf("/connexion"), { sorti = true }, barre)
+        // le site a deja son en-tete (organisation, menu, notifications) : pas de barre en plus ;
+        // « Ma tournee » est un lien du menu du site, intercepte ici
+        chemin != null -> EcranWeb(depot, chemin!!, listOf("/connexion"), { sorti = true }, null) { lien ->
+            if (lien.startsWith("/application/tournee")) depot.basculer("TOURNEE")
+        }
         else -> Column(Modifier.fillMaxSize().background(Fond)) {
             barre()
             Column(Modifier.fillMaxSize().padding(28.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {

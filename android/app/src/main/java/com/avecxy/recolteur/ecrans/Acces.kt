@@ -43,7 +43,7 @@ import com.avecxy.recolteur.donnees.Depot
  * et les clients (code client et code secret). Le serveur reconnait qui se connecte.
  */
 @Composable
-fun EcranConnexion(depot: Depot, lancer: (suspend () -> Unit) -> Unit) {
+fun EcranConnexion(depot: Depot, empreinteDisponible: Boolean, auDeverrouillage: () -> Unit, lancer: (suspend () -> Unit) -> Unit) {
     var identifiant by remember { mutableStateOf(depot.identifiantConnecte.ifEmpty { depot.dernierIdentifiant }) }
     var motDePasse by remember { mutableStateOf("") }
     var erreur by remember { mutableStateOf<String?>(null) }
@@ -58,12 +58,12 @@ fun EcranConnexion(depot: Depot, lancer: (suspend () -> Unit) -> Unit) {
             Text("Connexion", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
             Text(
                 if (depot.reconnexionRequise) "Ce téléphone doit être reconnecté. Vos saisies non envoyées sont conservées."
-                else "Personnel : votre identifiant et votre mot de passe. Client : votre code client et votre code secret.",
+                else "Personnel : votre identifiant et votre mot de passe (ou votre PIN). Client : votre code client et votre code secret.",
                 color = Gris, fontSize = 13.sp,
             )
             OutlinedTextField(identifiant, { identifiant = it }, label = { Text("Identifiant ou code client") }, singleLine = true, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email))
             OutlinedTextField(
-                motDePasse, { motDePasse = it }, label = { Text(if (codeClient) "Code secret" else "Mot de passe") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                motDePasse, { motDePasse = it }, label = { Text(if (codeClient) "Code secret" else "Mot de passe ou PIN") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = if (codeClient) KeyboardType.NumberPassword else KeyboardType.Password),
             )
@@ -74,6 +74,11 @@ fun EcranConnexion(depot: Depot, lancer: (suspend () -> Unit) -> Unit) {
                 lancer {
                     erreur = depot.connecter(identifiant, motDePasse)
                     enCours = false
+                    // connecte : on entre directement (le PIN ou le mot de passe vient d'etre tape)
+                    if (erreur == null && !depot.estClient) {
+                        if (empreinteDisponible) depot.activerEmpreinte(true)
+                        auDeverrouillage()
+                    }
                 }
             }
             Text("La première connexion demande internet. Le récolteur peut ensuite travailler sans réseau.", color = Gris, fontSize = 12.sp)
@@ -105,55 +110,40 @@ private fun Touche(texte: String, modifier: Modifier, fond: Color = Color(0x1AFF
 }
 
 @Composable
-private fun PointsPin(longueur: Int) {
+private fun PointsPin(longueur: Int, total: Int) {
     Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-        repeat(4) { i ->
+        repeat(total) { i ->
             Box(Modifier.size(16.dp).clip(CircleShape).background(if (i < longueur) Or else Color(0x337FB3A8)))
         }
     }
 }
 
-/** Apres la premiere connexion : le recolteur choisit le PIN de ce telephone. */
-@Composable
-fun EcranCreerPin(depot: Depot, empreinteDisponible: Boolean, auDeverrouillage: () -> Unit) {
-    var premier by remember { mutableStateOf("") }
-    var saisie by remember { mutableStateOf("") }
-    var erreur by remember { mutableStateOf<String?>(null) }
-    Column(Modifier.fillMaxSize().background(VertFonce).padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Spacer(Modifier.height(48.dp))
-        Text(if (premier.isEmpty()) "Choisissez votre PIN" else "Retapez votre PIN", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
-        Spacer(Modifier.height(8.dp))
-        Text("4 chiffres. Il ouvre l'application sur ce téléphone.", color = Color(0xFFB9DAD2), fontSize = 14.sp, textAlign = TextAlign.Center)
-        Spacer(Modifier.height(32.dp))
-        PointsPin(saisie.length)
-        Spacer(Modifier.height(12.dp))
-        Text(erreur ?: "", color = Or, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.weight(1f))
-        PaveNumerique(
-            surChiffre = { c ->
-                if (saisie.length < 4) saisie = saisie + c
-                if (saisie.length == 4) {
-                    when {
-                        premier.isEmpty() && (saisie.toSet().size == 1 || saisie in listOf("1234", "0123", "4321")) -> { erreur = "Ce PIN est trop facile à deviner."; saisie = "" }
-                        premier.isEmpty() -> { premier = saisie; saisie = ""; erreur = null }
-                        premier == saisie -> { depot.definirPin(saisie); if (empreinteDisponible) depot.activerEmpreinte(true); auDeverrouillage() }
-                        else -> { erreur = "Les deux PIN ne sont pas identiques."; premier = ""; saisie = "" }
-                    }
-                }
-            },
-            surEffacer = { saisie = saisie.dropLast(1) },
-        )
-    }
-}
-
-/** Ouverture quotidienne : PIN ou empreinte, sans reseau. */
+/**
+ * Ouverture de l'application, sans reseau : le meme secret qu'a la connexion (PIN du compte ou mot de passe),
+ * ou l'empreinte. Apres 5 erreurs, il faut se reconnecter en ligne.
+ */
 @Composable
 fun EcranPin(depot: Depot, empreinteDisponible: Boolean, demanderEmpreinte: () -> Unit, auDeverrouillage: () -> Unit) {
     var saisie by remember { mutableStateOf("") }
     var erreur by remember { mutableStateOf<String?>(null) }
     val etat = depot.etat
     val empreinte = empreinteDisponible && depot.empreinteActive
+    val pin = depot.secretEstPin
+    val total = depot.longueurPin
     LaunchedEffect(Unit) { if (empreinte) demanderEmpreinte() }
+    fun verifier() {
+        if (depot.verifierPin(saisie)) {
+            auDeverrouillage()
+        } else {
+            saisie = ""
+            val restants = depot.essaisRestants()
+            if (restants <= 0) {
+                depot.oublierPin()   // l'ecran de connexion revient ; les saisies restent dans le telephone
+            } else {
+                erreur = (if (pin) "PIN incorrect" else "Mot de passe incorrect") + ". Encore $restants essai(s)."
+            }
+        }
+    }
     Column(Modifier.fillMaxSize().background(VertFonce).padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text("Mosolia", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
@@ -165,36 +155,37 @@ fun EcranPin(depot: Depot, empreinteDisponible: Boolean, demanderEmpreinte: () -
         Text("Bonjour, ${depot.nomUtilisateur.split(" ").first().lowercase().replaceFirstChar { it.uppercase() }}", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
         Text("${depot.identifiantConnecte} · ${depot.nomOrganisation}", color = Color(0xFFB9DAD2), fontSize = 14.sp, textAlign = TextAlign.Center)
         Spacer(Modifier.height(32.dp))
-        Text("Entrez votre PIN", color = Color(0xFFDDEFEA), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-        Spacer(Modifier.height(16.dp))
-        PointsPin(saisie.length)
-        Spacer(Modifier.height(12.dp))
-        Text(erreur ?: "", color = Or, fontSize = 13.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
-        Spacer(Modifier.weight(1f))
-        PaveNumerique(
-            surChiffre = { c ->
-                if (saisie.length < 4) saisie = saisie + c
-                if (saisie.length == 4) {
-                    if (depot.verifierPin(saisie)) {
-                        auDeverrouillage()
-                    } else {
-                        saisie = ""
-                        val restants = depot.essaisRestants()
-                        if (restants <= 0) {
-                            depot.oublierPin()   // l'ecran de connexion revient ; les saisies restent dans le telephone
-                        } else {
-                            erreur = "PIN incorrect. Encore $restants essai(s)."
-                        }
+        if (pin) {
+            Text("Entrez votre PIN", color = Color(0xFFDDEFEA), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(16.dp))
+            PointsPin(saisie.length, total)
+            Spacer(Modifier.height(12.dp))
+            Text(erreur ?: "", color = Or, fontSize = 13.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+            Spacer(Modifier.weight(1f))
+            PaveNumerique(
+                surChiffre = { c ->
+                    if (saisie.length < total) saisie = saisie + c
+                    if (saisie.length == total) verifier()
+                },
+                surEffacer = { saisie = saisie.dropLast(1) },
+                boutonGauche = if (empreinte) ({
+                    Box(Modifier.fillMaxSize().clip(RoundedCornerShape(18.dp)).background(Or).clickable(onClick = demanderEmpreinte), contentAlignment = Alignment.Center) {
+                        Text("Empreinte", color = Encre, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
                     }
-                }
-            },
-            surEffacer = { saisie = saisie.dropLast(1) },
-            boutonGauche = if (empreinte) ({
-                Box(Modifier.fillMaxSize().clip(RoundedCornerShape(18.dp)).background(Or).clickable(onClick = demanderEmpreinte), contentAlignment = Alignment.Center) {
-                    Text("Empreinte", color = Encre, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
-                }
-            }) else null,
-        )
-        TextButton(onClick = { depot.oublierPin() }) { Text("PIN oublié ? Se reconnecter avec le mot de passe", color = Color(0xFFB9DAD2), fontSize = 13.sp) }
+                }) else null,
+            )
+        } else {
+            Carte(Modifier.fillMaxWidth(), bordure = null) {
+                OutlinedTextField(
+                    saisie, { saisie = it }, label = { Text("Mot de passe") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                    visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                )
+                erreur?.let { Text(it, color = Rouge, fontSize = 13.sp, fontWeight = FontWeight.Bold) }
+                GrandBouton("Ouvrir", actif = saisie.isNotEmpty()) { verifier() }
+                if (empreinte) TextButton(onClick = demanderEmpreinte, modifier = Modifier.fillMaxWidth()) { Text("Utiliser l'empreinte", color = Vert, fontWeight = FontWeight.Bold) }
+            }
+            Spacer(Modifier.weight(1f))
+        }
+        TextButton(onClick = { depot.oublierPin() }) { Text("Se reconnecter avec un autre secret", color = Color(0xFFB9DAD2), fontSize = 13.sp) }
     }
 }

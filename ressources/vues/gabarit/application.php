@@ -59,6 +59,10 @@ $couleur = $c->organisation['couleur_principale'] ?? null;
   </div>
   <?php endforeach; ?>
 
+  <?php if (dans_application() && \AvecXY\Application\ServiceMobile::profil($c) === 'LES_DEUX'): ?>
+    <?php /* l'application Android intercepte ce lien et revient a la tournee hors ligne */ ?>
+    <a class="menu-lien" href="<?= e(url('/application/tournee')) ?>"><?= e(t('application.ma_tournee')) ?></a>
+  <?php endif; ?>
   <form class="menu-pied" method="post" action="<?= e(url('/deconnexion')) ?>">
     <?= champ_csrf() ?>
     <button type="submit" class="menu-lien deconnexion"><?= e(t('menu.deconnexion')) ?></button>

@@ -2327,6 +2327,7 @@ return [
 
     // x
     'application.sur_ordinateur' => 'L\'import du fichier Excel se fait sur ordinateur, depuis le navigateur.',
+    'application.ma_tournee' => 'Ma tournée (hors ligne)',
 
     // x
     'plateforme.adresse_mobile' => 'Application mobile',

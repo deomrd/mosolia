@@ -2327,6 +2327,7 @@ return [
 
     // x
     'application.sur_ordinateur' => 'The Excel import is done on a computer, in the browser.',
+    'application.ma_tournee' => 'My round (offline)',
 
     // x
     'plateforme.adresse_mobile' => 'Mobile app',

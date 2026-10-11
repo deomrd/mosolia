@@ -115,8 +115,17 @@ final class ServiceMobile
         if ($appareilId === '') {
             throw new ErreurMetier('mobile.appareil_requis');
         }
-        // memes protections que la connexion web (limite d'essais, comptes inactifs)
-        $uid = $this->noyau->authentification()->connecter($identifiant, $motDePasse, $ip);
+        // memes protections que la connexion web (limite d'essais, comptes inactifs) ;
+        // un seul champ dans l'application : le PIN du compte (4 a 6 chiffres) ou le mot de passe
+        $uid = null;
+        if (preg_match('/^\d{4,6}$/', $motDePasse)) {
+            try {
+                $uid = (int) $this->noyau->serviceSecurite()->connecterParPin($identifiant, $motDePasse, $ip)['id'];
+            } catch (ErreurMetier) {
+                $uid = null;   // pas le PIN : peut-etre un mot de passe fait de chiffres
+            }
+        }
+        $uid ??= $this->noyau->authentification()->connecter($identifiant, $motDePasse, $ip);
         $u = $this->bd->un('SELECT * FROM avecxy_utilisateurs WHERE id = ?', [$uid]);
         $jeton = bin2hex(random_bytes(32));
         $this->bd->executer('UPDATE avecxy_api_jetons SET revoque_le = ? WHERE utilisateur_id = ? AND appareil_id = ? AND revoque_le IS NULL', [$this->bd->maintenant(), $uid, $appareilId]);

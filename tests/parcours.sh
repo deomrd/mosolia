@@ -602,6 +602,8 @@ verifier "ordinateur : pas de marque application" "0" "$(curl -s -b "$J" "$B/cli
 verifier "application : reconnue par le navigateur de l'application" "dans-application" "$(curl -s -b "$J" -A 'Mozilla/5.0 MosoliaApp/1.0' "$B/clients" | grep -o 'dans-application' | head -1)"
 verifier "application : reste reconnue pour la session" "dans-application" "$(curl -s -b "$J" "$B/clients" | grep -o 'dans-application' | head -1)"
 verifier "telephone : colonnes secondaires marquees" "oui" "$(curl -s -b "$J" "$B/clients" | grep -q 'tel-cache' && echo oui)"
+verifier "application : connexion avec le PIN du compte" "RECOLTEUR" "$(api "" POST /api/v1/connexion '{"identifiant":"marie@exemple.test","mot_de_passe":"4826","appareil_id":"tel-1"}' | champ profil)"
+verifier "application : mauvais PIN refuse" "REFUS" "$(api "" POST /api/v1/connexion '{"identifiant":"marie@exemple.test","mot_de_passe":"9999","appareil_id":"tel-1"}' | champ code)"
 verifier "recolteur : profil hors ligne" "RECOLTEUR" "$(api "" POST /api/v1/connexion '{"identifiant":"marie@exemple.test","mot_de_passe":"MonSecret33","appareil_id":"tel-1"}' | champ profil)"
 verifier "nom de l'application : Mosolia" "Mosolia" "$(curl -s "$B/manifest.webmanifest" | grep -o 'Mosolia' | head -1)"
 

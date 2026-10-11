@@ -62,8 +62,8 @@ fun Application(
     when {
         // client : son espace, dans l'application (il a tape son code secret ; pas de PIN du telephone)
         depot.estClient -> EcranEspaceClient(depot)
-        !depot.estConnecte || depot.reconnexionRequise || depot.identifiantConnecte.isEmpty() -> EcranConnexion(depot, lancer)
-        !depot.aUnPin -> EcranCreerPin(depot, empreinteDisponible, auDeverrouillage)
+        !depot.estConnecte || depot.reconnexionRequise || depot.identifiantConnecte.isEmpty() || !depot.aUnPin ->
+            EcranConnexion(depot, empreinteDisponible, auDeverrouillage, lancer)
         !deverrouille -> EcranPin(depot, empreinteDisponible, demanderEmpreinte, auDeverrouillage)
         // gestion : le site, en ligne, avec seulement les pages permises par ses droits
         depot.mode == "GESTION" -> EcranGestion(depot, lancer)

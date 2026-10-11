@@ -54,6 +54,9 @@ class Depot(contexte: Context) {
     }
     val estConnecte: Boolean get() = version >= 0 && base.lireMeta("jeton") != null && (!faitLaTournee || base.lireInstantane() != null)
     val aUnPin: Boolean get() = version >= 0 && base.lireMeta("pin") != null
+    /** Le secret qui ouvre l'application est le PIN du compte (sinon son mot de passe). */
+    val secretEstPin: Boolean get() = version >= 0 && base.lireMeta("pin_type") == "PIN"
+    val longueurPin: Int get() = base.lireMeta("pin_longueur")?.toIntOrNull() ?: 4
     /** Adresse integree a l'application, ou celle que la plateforme a donnee depuis. */
     val adresse: String get() = base.lireMeta("adresse") ?: com.avecxy.recolteur.BuildConfig.ADRESSE_SERVEUR
     /** Dernier identifiant (ou code client) tape, propose a la connexion suivante. */
@@ -97,6 +100,8 @@ class Depot(contexte: Context) {
             }
             base.ecrireMeta("jeton", r.getString("jeton"))
             base.ecrireMeta("identifiant", nouveau)
+            // l'application s'ouvre ensuite avec le meme secret que la connexion (PIN ou mot de passe), meme hors ligne
+            definirSecretLocal(motDePasse)
             base.ecrireMeta("profil", profil)
             base.ecrireMeta("nom", r.getJSONObject("utilisateur").optString("nom"))
             base.ecrireMeta("organisation", r.optJSONObject("organisation")?.optString("nom") ?: "")
@@ -172,11 +177,14 @@ class Depot(contexte: Context) {
         version++
     }
 
-    fun definirPin(pin: String) {
+    /** Garde (hache) le secret de connexion pour ouvrir l'application sans reseau. */
+    private fun definirSecretLocal(secret: String) {
         val sel = ByteArray(16).also { SecureRandom().nextBytes(it) }
-        base.ecrireMeta("pin", hex(sel) + ":" + hex(hacher(pin, sel)))
+        base.ecrireMeta("pin", hex(sel) + ":" + hex(hacher(secret, sel)))
+        val pin = Regex("^\\d{4,6}$").matches(secret)
+        base.ecrireMeta("pin_type", if (pin) "PIN" else "MOT_DE_PASSE")
+        base.ecrireMeta("pin_longueur", if (pin) secret.length.toString() else null)
         base.ecrireMeta("essais", "0")
-        version++
     }
 
     /** Verifie le PIN, sans reseau. Apres 5 erreurs il faut se reconnecter avec le mot de passe. */

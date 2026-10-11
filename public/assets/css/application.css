@@ -145,7 +145,7 @@ tbody tr:last-child td{border-bottom:0}
 
 /* --- telephone --- */
 @media (max-width:860px){
-  .menu{position:fixed;left:0;top:0;z-index:30;width:min(86vw,320px);transform:translateX(-105%);transition:transform .2s ease;box-shadow:12px 0 32px rgba(0,0,0,.2)}
+  .menu{position:fixed;left:0;top:0;bottom:0;height:auto;z-index:30;width:min(86vw,320px);transform:translateX(-105%);transition:transform .2s ease;box-shadow:12px 0 32px rgba(0,0,0,.2)}
   body.menu-ouvert .menu{transform:none}
   body.menu-replie .menu{display:flex}
   body.menu-ouvert{overflow:hidden}
