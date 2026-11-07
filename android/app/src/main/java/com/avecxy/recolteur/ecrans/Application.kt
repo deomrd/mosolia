@@ -35,6 +35,7 @@ sealed class Ecran {
     object Masse : Ecran()
     object NouveauClient : Ecran()
     object Notifications : Ecran()
+    object Commissions : Ecran()
     data class Client(val id: Long) : Ecran()
     data class Cotisation(val carnetId: Long) : Ecran()
     data class Remboursement(val creditId: Long) : Ecran()
@@ -108,6 +109,7 @@ fun Application(
                         is Ecran.Saisies -> EcranSaisies(depot)
                         is Ecran.Synchro -> EcranSynchro(depot, synchroniser, lancer)
                         is Ecran.Notifications -> EcranNotifications(depot, navigation, lancer)
+                        is Ecran.Commissions -> EcranCommissions(depot, navigation)
                     }
                 }
             }

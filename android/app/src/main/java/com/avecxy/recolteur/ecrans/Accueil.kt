@@ -117,6 +117,8 @@ fun EcranAccueil(depot: Depot, navigation: Navigation, synchroniser: () -> Unit)
                 }
             }
 
+            ActionSimple("Historique de commissions", Modifier.fillMaxWidth()) { navigation.ouvrir(Ecran.Commissions) }
+
             Text("Que voulez-vous faire ?", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Action("Cotisation", "Un client à la fois", Vert, Color.White, Modifier.weight(1f)) { navigation.ouvrir(Ecran.Choisir("cotisation")) }
