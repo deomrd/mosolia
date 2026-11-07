@@ -19,6 +19,7 @@ class Api(private val adresse: String, private val jeton: String?) {
     fun passage(cible: String): JSONObject = appeler("POST", "/api/v1/passage", JSONObject().put("cible", cible))
 
     fun portefeuille(): JSONObject = appeler("GET", "/api/v1/portefeuille", null)
+    fun commissions(): JSONObject = appeler("GET", "/api/v1/commissions", null)
 
     fun synchroniser(operations: org.json.JSONArray): JSONObject = appeler("POST", "/api/v1/synchroniser", JSONObject().put("operations", operations))
 

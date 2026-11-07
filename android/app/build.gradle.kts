@@ -11,8 +11,8 @@ android {
         applicationId = "com.mosolia.app"
         minSdk = 23
         targetSdk = 34
-        versionCode = 3
-        versionName = "2.1"
+        versionCode = 4
+        versionName = "2.2"
         // Adresse du serveur, integree a l'application (aucun champ a remplir). Si la plateforme
         // en donne une autre (Plateforme > Reglages > Adresse de l'application), l'application la suit.
         buildConfigField("String", "ADRESSE_SERVEUR", "\"https://mosolia.boutixy.com\"")

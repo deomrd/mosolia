@@ -3,6 +3,8 @@ package com.avecxy.recolteur.donnees
 import org.json.JSONArray
 import org.json.JSONObject
 
+data class Commission(val mois: String, val paye: Boolean, val part: Long, val deductions: Long?, val verse: Long?, val datePaiement: String?)
+
 /** Une saisie faite sur le telephone, en attente d'envoi (ou refusee par le serveur). */
 data class SaisieLocale(
     val uuid: String, val type: String, val donnees: JSONObject, val jour: String, val creeLe: Long,

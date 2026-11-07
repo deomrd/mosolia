@@ -120,6 +120,29 @@ class Depot(contexte: Context) {
         }
     }
 
+    suspend fun commissions(): Result<List<Commission>> = withContext(Dispatchers.IO) {
+        val jeton = base.lireMeta("jeton") ?: return@withContext Result.failure(Exception("Reconnectez-vous."))
+        try {
+            val lignes = Api(adresse, jeton).commissions().getJSONArray("commissions")
+            Result.success((0 until lignes.length()).map { i ->
+                val l = lignes.getJSONObject(i)
+                Commission(l.getString("mois"), l.getBoolean("paye"), l.getLong("part_centimes"),
+                    if (l.isNull("deductions_centimes")) null else l.getLong("deductions_centimes"),
+                    if (l.isNull("verse_centimes")) null else l.getLong("verse_centimes"),
+                    if (l.isNull("date_paiement")) null else l.getString("date_paiement"))
+            })
+        } catch (e: ErreurApi) {
+            if (e.codeHttp == 401) withContext(Dispatchers.Main) { reconnexionRequise = true }
+            Result.failure(Exception(if (e.codeHttp == 404) "Le serveur doit être mis à jour pour afficher les commissions dans l'application." else e.message))
+        } catch (e: IOException) {
+            Result.failure(Exception("Impossible de charger les commissions. Vérifiez votre connexion Internet."))
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(Exception("Le serveur a envoyé une réponse illisible. Réessayez."))
+        }
+    }
+
     /** Premiere page a ouvrir dans l'application apres une connexion client (passage a usage unique). */
     var passageEnAttente by mutableStateOf<String?>(null)
 

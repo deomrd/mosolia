@@ -58,6 +58,20 @@ final class ApiControleur
             if ($c->abonnement->etat === EtatAbonnement::SUSPENDU) {
                 return Reponse::json(['erreur' => t('abonnement.suspendu_personnel'), 'code' => 'SUSPENDU'], 403);
             }
+            if ($methode === 'GET' && $chemin === '/api/v1/commissions') {
+                $agent = (int) ($c->utilisateur['agent_id'] ?? 0);
+                if ($agent <= 0) {
+                    return Reponse::json(['erreur' => t('commissions.interdit'), 'code' => 'GESTION'], 403);
+                }
+                $lignes = $this->noyau->caisse()->historiqueCommissions($c->organisationId(), $agent, date('Y-m'));
+                return Reponse::json(['commissions' => array_map(static fn (array $l): array => [
+                    'mois' => $l['periode'], 'paye' => $l['paiement_id'] !== null,
+                    'part_centimes' => \AvecXY\Domaine\Montant::enCentimes($l['part_agent']),
+                    'deductions_centimes' => $l['paiement_id'] === null ? null : \AvecXY\Domaine\Montant::enCentimes($l['manquants_deduits']),
+                    'verse_centimes' => $l['paiement_id'] === null ? null : \AvecXY\Domaine\Montant::enCentimes($l['montant_paye']),
+                    'date_paiement' => $l['date_paiement'],
+                ], $lignes)]);
+            }
             // passage vers le site dans l'application (gestion), sans redemander le mot de passe
             if ($methode === 'POST' && $chemin === '/api/v1/passage') {
                 $code = $this->noyau->serviceMobile()->creerPassage('PERSONNEL', $c->organisationId(), $c->utilisateurId(), null, (string) ($corps['cible'] ?? '/'));
