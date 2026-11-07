@@ -4,6 +4,7 @@
 // 'module' le masque quand le forfait de l'organisation ne comprend pas ce module.
 return [
     ['cle' => 'terrain', 'elements' => [
+        ['cle' => 'commissions', 'recolteur' => true, 'chemin' => '/mes-commissions'],
         ['cle' => 'collecte', 'droit' => 'cotisations.saisir', 'chemin' => '/collecte'],
         ['cle' => 'clients', 'droit' => 'clients.voir', 'chemin' => '/clients'],
         ['cle' => 'clients_masse', 'droit' => 'clients.creer', 'chemin' => '/clients-en-masse'],

@@ -253,6 +253,28 @@ final class DepotCaisse
         );
     }
 
+    /** Mois termines avec commissions ou paiement ; les paiements annules sont exclus. */
+    public function historiqueCommissions(int $org, int $agent, string $moisCourant): array
+    {
+        return $this->bd->tous(
+            'SELECT m.periode, COALESCE(p.part_agent, b.part_agent, 0) AS part_agent,
+                    p.id AS paiement_id, p.manquants_deduits, p.montant_paye, p.date_paiement
+             FROM (
+                 SELECT periode FROM avecxy_benefices WHERE organisation_id = ? AND agent_id = ? AND part_agent > 0
+                 UNION
+                 SELECT periode FROM avecxy_paiements_agents WHERE organisation_id = ? AND agent_id = ? AND supprime_le IS NULL
+             ) m
+             LEFT JOIN (
+                 SELECT periode, SUM(part_agent) AS part_agent FROM avecxy_benefices
+                 WHERE organisation_id = ? AND agent_id = ? GROUP BY periode
+             ) b ON b.periode = m.periode
+             LEFT JOIN avecxy_paiements_agents p ON p.periode = m.periode
+                 AND p.organisation_id = ? AND p.agent_id = ? AND p.supprime_le IS NULL
+             WHERE m.periode < ? ORDER BY m.periode DESC',
+            [$org, $agent, $org, $agent, $org, $agent, $org, $agent, $moisCourant]
+        );
+    }
+
     public function creerPaiementRecolteur(array $d): int
     {
         return $this->bd->inserer('avecxy_paiements_agents', $d);

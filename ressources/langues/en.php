@@ -1,6 +1,16 @@
 <?php
 // English texts. Same keys as fr.php.
 return [
+    'menu.commissions' => 'Commission history',
+    'commissions.aide' => 'Your commissions for past months, newest first. Deductions and the amount paid appear once payment is recorded.',
+    'commissions.vide' => 'No commissions for past months.',
+    'commissions.interdit' => 'This page is reserved for accounts linked to a collector.',
+    'commissions.deductions' => 'Shortfalls deducted',
+    'commissions.verse' => 'Amount paid',
+    'commissions.statut' => 'Status',
+    'commissions.date' => 'Payment date',
+    'commissions.paye' => 'Paid',
+    'commissions.non_paye' => 'Unpaid',
     // Common
     'commun.enregistrer' => 'Save',
     'commun.annuler' => 'Cancel',

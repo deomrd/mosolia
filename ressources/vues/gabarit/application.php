@@ -35,7 +35,7 @@ $couleur = $c->organisation['couleur_principale'] ?? null;
 
   <?php foreach ($menu as $groupe):
       if (isset($groupe['module']) && !$c->module($groupe['module'])) { continue; }
-      $elements = array_filter($groupe['elements'], static fn ($el) => (!isset($el['droit']) || array_filter((array) $el['droit'], [$c, 'peut'])) && (!isset($el['module']) || $c->module($el['module'])));
+      $elements = array_filter($groupe['elements'], static fn ($el) => (!isset($el['droit']) || array_filter((array) $el['droit'], [$c, 'peut'])) && (!isset($el['module']) || $c->module($el['module'])) && (empty($el['recolteur']) || (int) ($c->utilisateur['agent_id'] ?? 0) > 0));
       if (!$elements) { continue; }
       $contientActif = false;
       foreach ($elements as $el) {

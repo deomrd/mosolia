@@ -1,6 +1,16 @@
 <?php
 // Textes en francais. Une cle = un texte. ":nom" est remplace par une valeur.
 return [
+    'menu.commissions' => 'Historique de commissions',
+    'commissions.aide' => 'Vos commissions des mois passés, du plus récent au plus ancien. Les déductions et le montant versé sont affichés une fois le paiement enregistré.',
+    'commissions.vide' => 'Aucune commission pour les mois passés.',
+    'commissions.interdit' => 'Cette page est réservée aux comptes rattachés à un collecteur.',
+    'commissions.deductions' => 'Manquants déduits',
+    'commissions.verse' => 'Montant versé',
+    'commissions.statut' => 'Statut',
+    'commissions.date' => 'Date de paiement',
+    'commissions.paye' => 'Payé',
+    'commissions.non_paye' => 'Non payé',
     // Commun
     'commun.enregistrer' => 'Enregistrer',
     'commun.annuler' => 'Annuler',

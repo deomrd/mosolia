@@ -118,6 +118,7 @@ return static function (Routeur $r): void {
     $r->ajouter('POST', '/parametres/credit/{id}', [ReglesCreditControleur::class, 'enregistrer'], ['droit' => 'parametres.credit', 'module' => 'credit']);
 
     // Caisse
+    $r->ajouter('GET', '/mes-commissions', [CaisseControleur::class, 'commissions'], ['toujours' => true]);
     $r->ajouter('GET', '/caisse', [CaisseControleur::class, 'journal'], ['droit' => 'caisse.voir']);
     $r->ajouter('POST', '/caisse/mouvements', [CaisseControleur::class, 'mouvement'], ['droit' => 'caisse.mouvements']);
     $r->ajouter('POST', '/caisse/transferts', [CaisseControleur::class, 'transferer'], ['droit' => 'caisse.transferts']);

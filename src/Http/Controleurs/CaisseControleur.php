@@ -136,6 +136,20 @@ final class CaisseControleur extends Controleur
         return $this->rediriger('/remises?jour=' . urlencode(Dates::ou($r->texte('date'), date('Y-m-d'))));
     }
 
+    public function commissions(): Reponse
+    {
+        $c = $this->contexte();
+        // L'identite vient exclusivement de la session, jamais des filtres de la requete.
+        $agent = (int) ($c->utilisateur['agent_id'] ?? 0);
+        if ($agent <= 0) {
+            return Reponse::html(e(t('commissions.interdit')), 403);
+        }
+        return $this->page('caisse/commissions', [
+            'titre' => t('menu.commissions'),
+            'lignes' => $this->noyau->caisse()->historiqueCommissions($c->organisationId(), $agent, date('Y-m')),
+        ]);
+    }
+
     public function paiements(): Reponse
     {
         $periode = ServiceCaisse::periode((string) ($this->requete->get['mois'] ?? ''));
